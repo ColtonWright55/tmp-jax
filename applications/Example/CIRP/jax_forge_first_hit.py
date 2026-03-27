@@ -1488,34 +1488,27 @@ def run_thermo_mech_cylinder_press_two_hits():
         xc = np.clip(x, x_min, x_top)
         return T_bot + (T_top - T_bot) * ((xc - x_min) / (x_top - x_min))
 
-    # === Define the two hits ===
-    # 7.4 sec ~ 8.2 sec from experiment
-    hit_1 = Hit(
-        x_min_band=0.5,  # 20% of H
-        x_max_band=0.7,  # 40% of H (band width = 0.2*H = 10mm for typical H=100mm forging)
-        compression_displacement=1.63,
-        rotation_euler_x=0.0,
-        total_time=0.8,   # duration for hit 1 (seconds)
-    )
+    # === Define hits (x [mm], theta [rad], r [mm]) ===
+    band_half_mm = 3.175
+    x_centers_mm = [0,       0,       6.35,   6.35,   12.7,   12.7,
+                    19.05,   19.05,   25.4,   25.4,   31.75,  31.75]
+    thetas_rad   = [0,       1.57,    0,      1.57,   0,      1.57,
+                    0,       1.57,    0,      1.57,   0,      1.57]
+    r_targets_mm = [6.3058,  7.32195, 6.3058, 7.32195, 6.3058, 7.32195,
+                    6.3058,  7.32195, 6.3058, 7.32195, 6.3058, 7.32195]
 
-    hit_2 = Hit(
-        x_min_band=0.65,  # 50% of H
-        x_max_band=0.85,  # 70% of H (overlaps with first hit region)
-        compression_displacement=1.63,
-        rotation_euler_x=-15.0,  # Opposite rotation
-        total_time=0.8,   # shorter hit
-    )
+    x_centers_mm += [x + 52 for x in x_centers_mm]  # Shift all hits toward part end
 
-    hit_3 = Hit(
-        x_min_band=0.55,  # 50% of H
-        x_max_band=0.75,  # 70% of H (overlaps with first hit region)
-        compression_displacement=1.83,
-        rotation_euler_x=30.0,  # Opposite rotation
-        total_time=1.2,   # longer final hit
-    )
-
-    # hits = [hit_1, hit_2, hit_3]
-    hits = [hit_1]
+    hits = [
+        Hit(
+            x_min_band=(x - band_half_mm) / H,
+            x_max_band=(x + band_half_mm) / H,
+            compression_displacement=R - r,
+            rotation_euler_x=float(np.degrees(theta)),
+            total_time=0.8,
+        )
+        for x, theta, r in zip(x_centers_mm, thetas_rad, r_targets_mm)
+    ]
 
     # === Build initial problem (single mesh, shared across all hits) ===
     pts = onp.array(mesh.points)
