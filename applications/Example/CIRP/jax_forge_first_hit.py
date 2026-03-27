@@ -53,6 +53,7 @@ from jax_fem_checkpoint.generate_mesh import get_meshio_cell_type, Mesh, cylinde
 from applications.Example.CIRP.mesh_container import MeshContainer
 
 from dataclasses import dataclass
+from typing import Optional
 from scipy.spatial.transform import Rotation
 
 
@@ -81,9 +82,10 @@ class Hit:
     """
     x_min_band: float
     x_max_band: float
-    compression_displacement: float
+    compression_displacement: float = 0.0
     rotation_euler_x: float = 0.0
     total_time: float = 1.0
+    tool_gap: Optional[float] = None  # final platen-to-platen distance (mm); overrides compression_displacement if set
 
 
 
@@ -1211,6 +1213,8 @@ def build_cylinder_press_bcs(mesh, R, H, hit, current_sol_u=None, T_linear_fn=No
         y_rot_max = y_max_initial
     
     # final target platen lines (in rotated coordinates)
+    if hit.tool_gap is not None:
+        compression_displacement = ((y_rot_max - y_rot_min) - hit.tool_gap) / 2
     y_target_left_rot = y_rot_min + compression_displacement
     y_target_right_rot = y_rot_max - compression_displacement
 
@@ -1508,7 +1512,7 @@ def run_thermo_mech_cylinder_press_two_hits():
         Hit(
             x_min_band=(x - band_half_mm) / H,
             x_max_band=(x + band_half_mm) / H,
-            compression_displacement=R - r,
+            tool_gap=2 * r,
             rotation_euler_x=float(np.degrees(theta)),
             total_time=0.8,
         )
