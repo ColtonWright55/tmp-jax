@@ -38,6 +38,11 @@ except ImportError:
 from jax import config
 config.update("jax_enable_x64", True)
 
+
+import os
+print(os.environ.get("CUDA_VISIBLE_DEVICES"))
+os.environ["CUDA_VISIBLE_DEVICES"] = "0,1"  # Use "0,1" if you want both
+print(os.environ.get("CUDA_VISIBLE_DEVICES"))
 _ = jax.devices()
 
 from jax_fem_checkpoint.problem import Problem       ## num_cuts = 20
